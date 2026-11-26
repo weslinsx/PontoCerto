@@ -79,6 +79,7 @@ data class UiState(
     // Estado do GPS / TalkBack (verificação silenciosa)
     val avisoGps: Boolean = false,
     val avisoTalkBack: Boolean = false,
+    val talkBackAtivo: Boolean = false,
     val precisaoGpsMetros: Float? = null,
     val foraDoCorredor: Boolean = false,
 
@@ -155,7 +156,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onResume() {
         val gpsLigado = accessibilityStatus.gpsLigado()
         val talkBackLigado = accessibilityStatus.talkBackAtivo()
-        _uiState.update { it.copy(avisoGps = !gpsLigado, avisoTalkBack = !talkBackLigado) }
+        _uiState.update { it.copy(avisoGps = !gpsLigado, avisoTalkBack = !talkBackLigado, talkBackAtivo = talkBackLigado) }
         if (talkBackLigado) ttsManager.stop()
         when {
             !gpsLigado -> speakMessage(

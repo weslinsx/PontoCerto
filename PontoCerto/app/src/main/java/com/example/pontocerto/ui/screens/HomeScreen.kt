@@ -171,6 +171,7 @@ fun HomeScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
 
         CartaoAcao(
             modifier = Modifier.weight(1f),
+            toqueDireto = !uiState.talkBackAtivo,
             cor = CardAzul,
             destaque = Ciano,
             icone = Icons.Default.DirectionsBus,
@@ -190,6 +191,7 @@ fun HomeScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
 
         CartaoAcao(
             modifier = Modifier.weight(1f),
+            toqueDireto = !uiState.talkBackAtivo,
             cor = CardRoxo,
             destaque = Amarelo,
             icone = Icons.Default.Place,
@@ -246,6 +248,7 @@ fun HomeScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
 
         CartaoAcao(
             modifier = Modifier.weight(1f),
+            toqueDireto = !uiState.talkBackAtivo,
             cor = CardVerde,
             destaque = Verde,
             icone = Icons.Default.PlayArrow,
@@ -278,6 +281,7 @@ fun HomeScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
     if (uiState.mostrarListaDestinos) {
         ListaDestinosDialog(
             destinos = uiState.destinosOrdenados,
+            toqueDireto = !uiState.talkBackAtivo,
             selecionadoId = uiState.selectedDestination?.id,
             distanciaMetros = { estacao ->
                 val lat = uiState.userLatitude
@@ -329,7 +333,8 @@ private fun CartaoAcao(
     rodapeTexto: String? = null,
     claro: Boolean = false,
     acoesExtras: List<CustomAccessibilityAction> = emptyList(),
-    rodapeConteudo: (@Composable () -> Unit)? = null
+    rodapeConteudo: (@Composable () -> Unit)? = null,
+    toqueDireto: Boolean = true
 ) {
     val corTitulo = if (claro) Color(0xFF000000) else Color(0xFFFFFFFF)
     val corTexto2 = if (claro) Color(0xFF1F2937) else CorTextoSuave
@@ -347,19 +352,25 @@ private fun CartaoAcao(
                 }
                 if (acoesExtras.isNotEmpty()) customActions = acoesExtras
             }
-            .pointerInput(aoClicar, aoSegurar) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    val soltou = withTimeoutOrNull(PRESSIONAR_LONGO_MS) {
-                        waitForUpOrCancellation()
+            .then(
+                if (toqueDireto) {
+                    Modifier.pointerInput(aoClicar, aoSegurar) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            val soltou = withTimeoutOrNull(PRESSIONAR_LONGO_MS) {
+                                waitForUpOrCancellation()
+                            }
+                            when {
+                                soltou == null -> aoSegurar?.invoke()
+                                (soltou.position - down.position).getDistance() <= viewConfiguration.touchSlop -> aoClicar()
+                                // Arrasto (deslize do TalkBack ou rolagem): ignora para não ativar o card.
+                            }
+                        }
                     }
-                    when {
-                        soltou == null -> aoSegurar?.invoke()
-                        (soltou.position - down.position).getDistance() <= viewConfiguration.touchSlop -> aoClicar()
-                        // Arrasto (deslize do TalkBack ou rolagem): ignora para não ativar o card.
-                    }
+                } else {
+                    Modifier
                 }
-            },
+            ),
         color = cor,
         shape = RoundedCornerShape(24.dp),
         border = androidx.compose.foundation.BorderStroke(2.dp, destaque)
@@ -484,6 +495,7 @@ private fun CaixaFavorito(modifier: Modifier = Modifier, texto: String, destaque
 @Composable
 private fun ListaDestinosDialog(
     destinos: List<com.example.pontocerto.data.model.BrtStation>,
+    toqueDireto: Boolean = true,
     selecionadoId: String?,
     distanciaMetros: (com.example.pontocerto.data.model.BrtStation) -> Float?,
     aoSelecionar: (com.example.pontocerto.data.model.BrtStation) -> Unit,
@@ -536,13 +548,17 @@ private fun ListaDestinosDialog(
                                         aoSelecionar(estacao); true
                                     }
                                 }
-                                .pointerInput(estacao.id) {
-                                    awaitEachGesture {
-                                        awaitFirstDown(requireUnconsumed = false)
-                                        waitForUpOrCancellation()
-                                        aoSelecionar(estacao)
-                                    }
-                                },
+                                .then(
+                                    if (toqueDireto) {
+                                        Modifier.pointerInput(estacao.id) {
+                                            awaitEachGesture {
+                                                awaitFirstDown(requireUnconsumed = false)
+                                                waitForUpOrCancellation()
+                                                aoSelecionar(estacao)
+                                            }
+                                        }
+                                    } else Modifier
+                                ),
                             color = if (selecionado) CorCardSelecionado else CorCardLista,
                             shape = RoundedCornerShape(14.dp)
                         ) {
@@ -585,13 +601,17 @@ private fun ListaDestinosDialog(
                             contentDescription = "Fechar lista de destinos"
                             onClick(label = "Fechar") { aoFechar(); true }
                         }
-                        .pointerInput(Unit) {
-                            awaitEachGesture {
-                                awaitFirstDown(requireUnconsumed = false)
-                                waitForUpOrCancellation()
-                                aoFechar()
-                            }
-                        },
+                        .then(
+                            if (toqueDireto) {
+                                Modifier.pointerInput(Unit) {
+                                    awaitEachGesture {
+                                        awaitFirstDown(requireUnconsumed = false)
+                                        waitForUpOrCancellation()
+                                        aoFechar()
+                                    }
+                                }
+                            } else Modifier
+                        ),
                     color = CorCardLista,
                     shape = RoundedCornerShape(14.dp)
                 ) {
