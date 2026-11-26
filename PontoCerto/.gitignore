@@ -1,0 +1,28 @@
+# Android & Gradle
+*.iml
+.gradle
+/local.properties
+local.properties
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+.kotlin
+
+# IDEs (Android Studio / IntelliJ / VS Code)
+/.idea/
+.vscode/
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Python & Telemetria
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+.venv/
+venv/
+ENV/

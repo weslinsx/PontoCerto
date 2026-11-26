@@ -1,0 +1,8 @@
+PontoCerto/.gradle/
+PontoCerto/build/
+PontoCerto/app/build/
+PontoCerto/local.properties
+*.apk
+.grill/
+PontoCerto/.idea/
+*.iml
